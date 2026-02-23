@@ -3,8 +3,49 @@ const FOLDER_ID = '1u901nO4ddhMR78VgprZ3RmEFjw38FydX';
 const SHEET_ID = '1pa0Ek_g0JHm0qPMucugC9oQ2Si7MbiMZVMHWyObvob8';
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
 
+// Hashed passcode (SHA-256 of "score" - example, you can change this)
+// To generate a new hash: await sha256("your_password")
+const AUTH_HASH = "ef92b5b5d55b3d6812835ad689d0e7d66be87e6fa1e38947f64249ce63721799"; // hash for "score"
+
+/**
+ * SHA-256 Hashing helper
+ */
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function checkAuth() {
+    const overlay = document.getElementById('login-overlay');
+    const mainContent = document.getElementById('main-content');
+
+    if (sessionStorage.getItem('authenticated') === 'true') {
+        overlay.style.display = 'none';
+        mainContent.style.display = 'block';
+        return true;
+    }
+    return false;
+}
+
+async function handleLogin() {
+    const input = document.getElementById('passcode-input');
+    const error = document.getElementById('login-error');
+    const hashedInput = await sha256(input.value);
+
+    if (hashedInput === AUTH_HASH) {
+        sessionStorage.setItem('authenticated', 'true');
+        location.reload(); // Reload to trigger init correctly
+    } else {
+        error.style.display = 'block';
+        input.value = '';
+    }
+}
+
 // common tags for filtering
 const COMMON_TAGS = [
+    // ... (rest of the code remains same)
     "J-POP", "Drama", "Movie", "Anime", "Classic", "Child", "CM", "Mens", "Ladies",
     "洋インスト", "VP", "Duo", "ジャズ・ラテン", "童謡", "etc.", "無印"
 ];
@@ -399,6 +440,10 @@ const CACHE_KEY = 'SHEET_MUSIC_CACHE_V6_NORMALIZATION';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
+    // Check authentication first
+    const isAuthenticated = await checkAuth();
+    if (!isAuthenticated) return;
+
     const loading = document.getElementById('loading');
     loading.style.display = 'flex';
 
@@ -540,6 +585,10 @@ async function refreshCache() {
 // Event Listeners
 document.getElementById('btn-search').addEventListener('click', filterFiles);
 document.getElementById('btn-refresh').addEventListener('click', refreshCache);
+document.getElementById('btn-login').addEventListener('click', handleLogin);
+document.getElementById('passcode-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+});
 
 // Start
 init();
