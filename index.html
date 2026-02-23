@@ -13,7 +13,17 @@
 </head>
 
 <body>
-    <div class="container">
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <h1>Sheet Music Search</h1>
+            <p>アクセスのためにパスコードを入力してください</p>
+            <input type="password" id="passcode-input" placeholder="パスコード...">
+            <button id="btn-login" class="btn-submit">ログイン</button>
+            <p id="login-error" class="error-text" style="display:none">パスコードが正しくありません</p>
+        </div>
+    </div>
+
+    <div class="container" id="main-content" style="display:none">
         <header>
             <h1>Sheet Music Search</h1>
             <p>Google Drive 楽譜ライブラリ</p>
