@@ -3,9 +3,8 @@ const FOLDER_ID = '1u901nO4ddhMR78VgprZ3RmEFjw38FydX';
 const SHEET_ID = '1pa0Ek_g0JHm0qPMucugC9oQ2Si7MbiMZVMHWyObvob8';
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
 
-// Hashed passcode (SHA-256 of "score" - example, you can change this)
-// To generate a new hash: await sha256("your_password")
-const AUTH_HASH = "ef92b5b5d55b3d6812835ad689d0e7d66be87e6fa1e38947f64249ce63721799"; // hash for "score"
+// Hashed passcode (SHA-256 of "rainbow")
+const AUTH_HASH = "8fced00b6ce281456d69daef5f2b33eaf1a4a29b5923ebe5f1f2c54f5886c7a3";
 
 /**
  * SHA-256 Hashing helper
