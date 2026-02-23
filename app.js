@@ -385,8 +385,9 @@ async function fetchSheetData() {
  */
 function mergeData(sheetEntries, physicalFiles) {
     const normalize = (str) => str.toLowerCase().replace(/[\s\.]/g, '');
+    const matchedLinks = new Set();
 
-    return sheetEntries.map(entry => {
+    const merged = sheetEntries.map(entry => {
         const entryTitleNorm = normalize(entry.title);
         const entryArtistNorm = normalize(entry.artist);
 
@@ -403,6 +404,7 @@ function mergeData(sheetEntries, physicalFiles) {
         });
 
         if (match) {
+            matchedLinks.add(match.link);
             return {
                 ...entry,
                 instrument: match.instrument,
@@ -413,6 +415,10 @@ function mergeData(sheetEntries, physicalFiles) {
         }
         return entry;
     });
+
+    // Add unmatched physical files
+    const unmatched = physicalFiles.filter(file => !matchedLinks.has(file.link));
+    return [...merged, ...unmatched.map(f => ({ ...f, isAvailable: true }))];
 }
 
 function renderFiles(files) {
