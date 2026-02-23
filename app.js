@@ -151,7 +151,7 @@ function renderFiles(files) {
     });
 }
 
-const CACHE_KEY = 'SHEET_MUSIC_CACHE_TAGS_V1';
+const CACHE_KEY = 'SHEET_MUSIC_CACHE_V2_DOCS_ONLY';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
