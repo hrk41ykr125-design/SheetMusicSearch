@@ -318,26 +318,36 @@ function filterFiles() {
     const tagQuery = document.getElementById('search-tag').value.trim().toLowerCase();
     const instrumentQuery = document.getElementById('search-instrument').value.trim().toLowerCase();
 
+    // Helper to normalize strings for comparison (remove spaces and dots)
+    const normalize = (str) => str.toLowerCase().replace(/[\s\.]/g, '');
+
     const filtered = allFiles.filter(file => {
         const titleLower = file.title.toLowerCase();
         const artistLower = file.artist.toLowerCase();
+        const artistNorm = normalize(file.artist);
 
         // Fuzzy match helper
-        const isMatch = (field, query) => {
+        const isMatch = (field, query, fieldNorm = null) => {
             if (!query) return true;
+            const queryNorm = normalize(query);
+
+            // Direct match
             if (field.includes(query)) return true;
+            if (fieldNorm && fieldNorm.includes(queryNorm)) return true;
 
             // Check aliases
             for (const [target, aliases] of Object.entries(SEARCH_ALIASES)) {
-                if (target.toLowerCase().includes(field.toLowerCase()) || field.toLowerCase().includes(target.toLowerCase())) {
-                    if (aliases.some(a => a.toLowerCase().includes(query) || query.includes(a.toLowerCase()))) return true;
+                const targetNorm = normalize(target);
+                // If the field matches the target (e.g. "Mrs.GREEN APPLE" vs "mrs. green apple")
+                if (fieldNorm === targetNorm || field.includes(target.toLowerCase()) || target.toLowerCase().includes(field)) {
+                    if (aliases.some(a => normalize(a).includes(queryNorm) || queryNorm.includes(normalize(a)))) return true;
                 }
             }
             return false;
         };
 
         const matchName = isMatch(titleLower, nameQuery);
-        const matchAuthor = isMatch(artistLower, authorQuery);
+        const matchAuthor = isMatch(artistLower, authorQuery, artistNorm);
         const matchTag = !tagQuery || file.tags.some(t => t.toLowerCase().includes(tagQuery));
         const matchInstrument = !instrumentQuery || (file.instrument && file.instrument.toLowerCase().includes(instrumentQuery));
 
