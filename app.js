@@ -147,6 +147,10 @@ function parseFilename(filename, mimeType = null) {
         title = cleanName.replace(artistMatch[0], "").trim();
     }
 
+    // Clean title: Remove leading numbers (e.g. "01 ") and bracketed text (e.g. "[EL]")
+    title = title.replace(/^[0-9]+[\s\-\.]*/, '').trim(); // Remove leading numbers
+    title = title.replace(/\[.*?\]/g, '').trim();        // Remove bracketed text
+
     // specific rule for Official髭男dism
     const higedanKeywords = ["髭男", "ヒゲダン", "Official髭男dism"];
     if (higedanKeywords.some(k => artist.includes(k) || title.includes(k))) {
