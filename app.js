@@ -18,12 +18,59 @@ const TAG_KEYWORDS = {
     "ジャズ・ラテン": ["Jazz", "Latin", "ジャズ", "ラテン"],
 };
 
-// Aliases for fuzzy search
+// Aliases for fuzzy search (Title and Artist)
 const SEARCH_ALIASES = {
-    "mrs. green apple": ["ミセス", "ミセスグリーンアップル"],
+    "mrs. green apple": ["ミセス", "ミセスグリーンアップル", "Mrs.GREEN APPLE"],
     "official髭男dism": ["ヒゲダン", "髭男"],
     "megalovannia": ["メガロバニア"],
-    "megalovania": ["メガロバニア"]
+    "megalovania": ["メガロバニア"],
+    "undertale": ["アンダーテール", "アンテ"],
+    "vaundy": ["バウンディ"],
+    "yorushika": ["ヨルシカ"],
+    "yoasobi": ["ヨアソビ"],
+    "ado": ["アド"],
+    "back number": ["バックナンバー"],
+    "radwimps": ["ラッド", "ラッドウィンプス"],
+    "t-square": ["ティー・スクエア", "ティースクエア"],
+    "supercell": ["スーパーセル"],
+    "back street boys": ["バックスストリートボーイズ"],
+    "queen": ["クイーン"],
+    "the beatles": ["ビートルズ"],
+    "disney": ["ディズニー"],
+    "night dancer": ["ナイトダンサー"]
+};
+
+// Automated artist mapping for "Unknown" songs
+const SONG_ARTIST_MAP = {
+    "別の人の彼女になったよ": "wacci",
+    "シンデレラボーイ": "Saucy Dog",
+    "ドライフラワー": "優里",
+    "ベテルギウス": "優里",
+    "水平線": "back number",
+    "高嶺の花子さん": "back number",
+    "猫": "DISH//",
+    "丸の内サディスティック": "椎名林檎",
+    "チェリー": "スピッツ",
+    "小さな恋のうた": "MONGOL800"
+};
+
+// Instrument Normalization Map
+const INSTRUMENT_MAP = {
+    "pf": "ピアノ",
+    "piano": "ピアノ",
+    "el": "エレクトーン",
+    "electone": "エレクトーン",
+    "vo": "ボーカル",
+    "vocal": "ボーカル",
+    "gt": "ギター",
+    "guitar": "ギター",
+    "ba": "ベース",
+    "bass": "ベース",
+    "dr": "ドラム",
+    "drums": "ドラム",
+    "fl": "フルート",
+    "vn": "バイオリン",
+    "sax": "サックス"
 };
 
 let allFiles = [];
@@ -67,6 +114,26 @@ function parseFilename(filename, mimeType = null) {
         tags.push("J-POP");
     }
 
+    // Handle Unknown Artists via SONG_ARTIST_MAP
+    if (artist === "不明" || !artist) {
+        for (const [song, mappedArtist] of Object.entries(SONG_ARTIST_MAP)) {
+            if (title.includes(song)) {
+                artist = mappedArtist;
+                break;
+            }
+        }
+    }
+
+    // Extract instrument from parenthesis (Pf) etc
+    const parenMatch = title.match(/\((.*?)\)/);
+    if (parenMatch) {
+        const potentialInst = parenMatch[1].toLowerCase();
+        if (INSTRUMENT_MAP[potentialInst] || ["pf", "fl", "vn", "sax", "gt", "ba", "dr", "vo"].includes(potentialInst)) {
+            instrument = INSTRUMENT_MAP[potentialInst] || potentialInst;
+            title = title.replace(parenMatch[0], "").trim();
+        }
+    }
+
     // Split by _ to get title and metadata
     const parts = title.split('_');
     title = parts[0].trim();
@@ -74,13 +141,21 @@ function parseFilename(filename, mimeType = null) {
     if (parts.length > 1) {
         for (let i = 1; i < parts.length; i++) {
             const part = parts[i].trim();
-            // check for common instruments
-            if (["pf", "fl", "vn", "sax", "gt", "ba", "dr", "vo", "エレクトーン", "ピアノ"].includes(part.toLowerCase())) {
-                instrument = part;
+            const lowerPart = part.toLowerCase();
+            // check for common instruments and normalize
+            if (INSTRUMENT_MAP[lowerPart]) {
+                instrument = INSTRUMENT_MAP[lowerPart];
+            } else if (["pf", "fl", "vn", "sax", "gt", "ba", "dr", "vo", "エレクトーン", "ピアノ"].includes(lowerPart)) {
+                instrument = INSTRUMENT_MAP[lowerPart] || part;
             } else if (part) {
                 tags.push(part);
             }
         }
+    }
+
+    // Final Normalization: If instrument is still a code, map it
+    if (instrument && INSTRUMENT_MAP[instrument.toLowerCase()]) {
+        instrument = INSTRUMENT_MAP[instrument.toLowerCase()];
     }
 
     // Keyword based tag inference
@@ -194,7 +269,7 @@ function renderFiles(files) {
     });
 }
 
-const CACHE_KEY = 'SHEET_MUSIC_CACHE_V5_STURDY';
+const CACHE_KEY = 'SHEET_MUSIC_CACHE_V6_NORMALIZATION';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
@@ -215,8 +290,8 @@ async function init() {
 
     if (API_KEY === 'YOUR_GOOGLE_DRIVE_API_KEY' || !API_KEY.startsWith('AIza')) {
         allFiles = [
-            { artist: "Official髭男dism", title: "ミックスナッツ", tags: ["J-POP", "Anime"], instrument: "pf", link: "#" },
-            { artist: "Official髭男dism", title: "Subtitle", tags: ["J-POP", "Drama"], instrument: "pf", link: "#" },
+            { artist: "Official髭男dism", title: "ミックスナッツ", tags: ["J-POP", "Anime"], instrument: "ピアノ", link: "#" },
+            { artist: "Official髭男dism", title: "Subtitle", tags: ["J-POP", "Drama"], instrument: "ピアノ", link: "#" },
             { artist: "Mrs. GREEN APPLE", title: "ダンスホール", tags: ["J-POP"], instrument: "", link: "#" },
             { artist: "Ado", title: "新時代", tags: ["J-POP", "Anime"], instrument: "", link: "#" },
             { artist: "Toby Fox", title: "MEGALOVANIA", tags: ["Game"], instrument: "", link: "#" }
@@ -264,7 +339,7 @@ function filterFiles() {
         const matchName = isMatch(titleLower, nameQuery);
         const matchAuthor = isMatch(artistLower, authorQuery);
         const matchTag = !tagQuery || file.tags.some(t => t.toLowerCase().includes(tagQuery));
-        const matchInstrument = !instrumentQuery || file.instrument.toLowerCase().includes(instrumentQuery);
+        const matchInstrument = !instrumentQuery || (file.instrument && file.instrument.toLowerCase().includes(instrumentQuery));
 
         return matchName && matchAuthor && matchTag && matchInstrument;
     });
