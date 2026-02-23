@@ -88,11 +88,12 @@ function parseFilename(filename) {
     return { artist, title, tags, instrument, original: filename };
 }
 
-async function fetchFiles(folderId) {
+async function fetchFiles(folderId, pageToken = null) {
     const results = [];
-    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webViewLink)&key=${API_KEY}`;
+    let url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=nextPageToken,files(id,name,mimeType,webViewLink)&key=${API_KEY}`;
+    if (pageToken) url += `&pageToken=${pageToken}`;
 
-    // Allowed MIME types for "Sheet Music" (Documents)
+    // Allowed MIME types / Extensions for "Sheet Music"
     const ALLOWED_MIMES = [
         'application/pdf',
         'application/msword',
@@ -101,6 +102,7 @@ async function fetchFiles(folderId) {
         'application/rtf',
         'text/plain'
     ];
+    const DOC_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.rtf'];
 
     try {
         const response = await fetch(url);
@@ -111,17 +113,28 @@ async function fetchFiles(folderId) {
                 if (file.mimeType === 'application/vnd.google-apps.folder') {
                     const subFiles = await fetchFiles(file.id);
                     results.push(...subFiles);
-                } else if (ALLOWED_MIMES.includes(file.mimeType)) {
-                    const parsed = parseFilename(file.name);
-                    if (parsed) {
-                        results.push({
-                            ...parsed,
-                            id: file.id,
-                            link: file.webViewLink
-                        });
+                } else {
+                    const isDocMime = ALLOWED_MIMES.includes(file.mimeType);
+                    const isDocExt = DOC_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext));
+
+                    if (isDocMime || isDocExt) {
+                        const parsed = parseFilename(file.name);
+                        if (parsed) {
+                            results.push({
+                                ...parsed,
+                                id: file.id,
+                                link: file.webViewLink
+                            });
+                        }
                     }
                 }
             }
+        }
+
+        // Handle Pagination
+        if (data.nextPageToken) {
+            const nextFiles = await fetchFiles(folderId, data.nextPageToken);
+            results.push(...nextFiles);
         }
     } catch (error) {
         console.error("Error fetching files:", error);
