@@ -25,6 +25,11 @@ let allFiles = [];
  * Pattern: 【Artist】Title_Metadata_Instrument.ext
  */
 function parseFilename(filename) {
+    // Check for image extensions as secondary safety
+    if (/\.(jpe?g|png|gif|bmp|webp|heic)$/i.test(filename)) {
+        return null;
+    }
+
     // strip extension
     const cleanName = filename.replace(/\.[^/.]+$/, "");
 
@@ -100,11 +105,13 @@ async function fetchFiles(folderId) {
                     results.push(...subFiles);
                 } else if (ALLOWED_MIMES.includes(file.mimeType)) {
                     const parsed = parseFilename(file.name);
-                    results.push({
-                        ...parsed,
-                        id: file.id,
-                        link: file.webViewLink
-                    });
+                    if (parsed) {
+                        results.push({
+                            ...parsed,
+                            id: file.id,
+                            link: file.webViewLink
+                        });
+                    }
                 }
             }
         }
