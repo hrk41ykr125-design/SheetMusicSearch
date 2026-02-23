@@ -32,14 +32,21 @@ let allFiles = [];
  * Extract info from filename
  * Pattern: 【Artist】Title_Metadata_Instrument.ext
  */
-function parseFilename(filename) {
+function parseFilename(filename, mimeType = null) {
     // Check for image extensions as secondary safety
     if (/\.(jpe?g|png|gif|bmp|webp|heic)$/i.test(filename)) {
         return null;
     }
 
-    // strip extension
-    const cleanName = filename.replace(/\.[^/.]+$/, "");
+    // List of extensions we want to strip
+    const knownExtensions = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'ptx', 'mus'];
+    const extMatch = filename.match(/\.([a-z0-9]+)$/i);
+
+    let cleanName = filename;
+    if (extMatch && (knownExtensions.includes(extMatch[1].toLowerCase()) || mimeType !== 'application/vnd.google-apps.document')) {
+        // Only strip if it's a known extension OR not a Google Doc (since Docs often have no extension but might have dots)
+        cleanName = filename.replace(/\.[^/.]+$/, "");
+    }
 
     let artist = "不明";
     let title = cleanName;
@@ -54,7 +61,8 @@ function parseFilename(filename) {
     }
 
     // specific rule for Official髭男dism
-    if (["髭男", "ヒゲダン", "Official髭男dism"].some(k => artist.includes(k) || title.includes(k))) {
+    const higedanKeywords = ["髭男", "ヒゲダン", "Official髭男dism"];
+    if (higedanKeywords.some(k => artist.includes(k) || title.includes(k))) {
         artist = "Official髭男dism";
         tags.push("J-POP");
     }
@@ -88,7 +96,7 @@ function parseFilename(filename) {
     return { artist, title, tags, instrument, original: filename };
 }
 
-async function fetchFiles(folderId, pageToken = null) {
+async function fetchFiles(folderId, pageToken = null, isSubfolder = false) {
     const results = [];
     let url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=nextPageToken,files(id,name,mimeType,webViewLink,shortcutDetails)&pageSize=1000&key=${API_KEY}`;
     if (pageToken) url += `&pageToken=${pageToken}`;
@@ -100,9 +108,10 @@ async function fetchFiles(folderId, pageToken = null) {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.google-apps.document',
         'application/rtf',
-        'text/plain'
+        'text/plain',
+        'application/octet-stream' // For .ptx, .mus etc
     ];
-    const DOC_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.rtf'];
+    const DOC_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.ptx', '.mus'];
 
     try {
         const response = await fetch(url);
@@ -122,14 +131,16 @@ async function fetchFiles(folderId, pageToken = null) {
                 }
 
                 if (isFolder) {
-                    const subFiles = await fetchFiles(targetId);
+                    const subFiles = await fetchFiles(targetId, null, true);
                     results.push(...subFiles);
                 } else {
                     const isDocMime = ALLOWED_MIMES.includes(file.mimeType);
                     const isDocExt = DOC_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext));
+                    // Also include extensionless Google Docs
+                    const isGoogleDoc = file.mimeType === 'application/vnd.google-apps.document';
 
-                    if (isDocMime || isDocExt) {
-                        const parsed = parseFilename(file.name);
+                    if (isDocMime || isDocExt || isGoogleDoc) {
+                        const parsed = parseFilename(file.name, file.mimeType);
                         if (parsed) {
                             results.push({
                                 ...parsed,
@@ -142,9 +153,9 @@ async function fetchFiles(folderId, pageToken = null) {
             }
         }
 
-        // Handle Pagination
+        // Handle Pagination for same folder
         if (data.nextPageToken) {
-            const nextFiles = await fetchFiles(folderId, data.nextPageToken);
+            const nextFiles = await fetchFiles(folderId, data.nextPageToken, isSubfolder);
             results.push(...nextFiles);
         }
     } catch (error) {
