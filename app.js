@@ -18,6 +18,14 @@ const TAG_KEYWORDS = {
     "ジャズ・ラテン": ["Jazz", "Latin", "ジャズ", "ラテン"],
 };
 
+// Aliases for fuzzy search
+const SEARCH_ALIASES = {
+    "mrs. green apple": ["ミセス", "ミセスグリーンアップル"],
+    "official髭男dism": ["ヒゲダン", "髭男"],
+    "megalovannia": ["メガロバニア"],
+    "megalovania": ["メガロバニア"]
+};
+
 let allFiles = [];
 
 /**
@@ -151,7 +159,7 @@ function renderFiles(files) {
     });
 }
 
-const CACHE_KEY = 'SHEET_MUSIC_CACHE_V2_DOCS_ONLY';
+const CACHE_KEY = 'SHEET_MUSIC_CACHE_V4_PAGINATION_FUZZY';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
@@ -198,10 +206,28 @@ function filterFiles() {
     const instrumentQuery = document.getElementById('search-instrument').value.toLowerCase();
 
     const filtered = allFiles.filter(file => {
-        const matchName = file.title.toLowerCase().includes(nameQuery);
-        const matchAuthor = file.artist.toLowerCase().includes(authorQuery);
+        const titleLower = file.title.toLowerCase();
+        const artistLower = file.artist.toLowerCase();
+
+        // Fuzzy match helper
+        const isMatch = (field, query) => {
+            if (!query) return true;
+            if (field.includes(query)) return true;
+
+            // Check aliases
+            for (const [target, aliases] of Object.entries(SEARCH_ALIASES)) {
+                if (target.includes(field) || field.includes(target)) {
+                    if (aliases.some(a => a.includes(query) || query.includes(a))) return true;
+                }
+            }
+            return false;
+        };
+
+        const matchName = isMatch(titleLower, nameQuery);
+        const matchAuthor = isMatch(artistLower, authorQuery);
         const matchTag = !tagQuery || file.tags.some(t => t.toLowerCase().includes(tagQuery));
         const matchInstrument = !instrumentQuery || file.instrument.toLowerCase().includes(instrumentQuery);
+
         return matchName && matchAuthor && matchTag && matchInstrument;
     });
 
