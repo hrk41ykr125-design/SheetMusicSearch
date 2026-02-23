@@ -400,11 +400,54 @@ function filterFiles() {
     renderFiles(filtered);
 }
 
-document.getElementById('btn-search').addEventListener('click', filterFiles);
 const inputs = ['search-name', 'search-author', 'search-tag', 'search-instrument'];
 inputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', filterFiles);
 });
 
+/**
+ * Force clear cache and refetch from API
+ */
+async function refreshCache() {
+    const btnRefresh = document.getElementById('btn-refresh');
+    const loading = document.getElementById('loading');
+
+    // Visual feedback
+    btnRefresh.classList.add('spinning');
+    loading.style.display = 'flex';
+
+    try {
+        // Clear storage
+        localStorage.removeItem(CACHE_KEY);
+        console.log("Cache cleared manually");
+
+        // Refetch
+        allFiles = await fetchFiles(FOLDER_ID);
+
+        if (allFiles.length > 0) {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                data: allFiles
+            }));
+        }
+
+        // Sort and Render
+        allFiles.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+        renderFiles(allFiles);
+        console.log(`Refreshed ${allFiles.length} files from API`);
+    } catch (error) {
+        console.error("Refresh failed:", error);
+        alert("データの更新に失敗しました。");
+    } finally {
+        loading.style.display = 'none';
+        btnRefresh.classList.remove('spinning');
+    }
+}
+
+// Event Listeners
+document.getElementById('btn-search').addEventListener('click', filterFiles);
+document.getElementById('btn-refresh').addEventListener('click', refreshCache);
+
+// Start
 init();
