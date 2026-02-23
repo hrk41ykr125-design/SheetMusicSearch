@@ -1,6 +1,7 @@
-// configuration
 const API_KEY = 'AIzaSyBbHgpvAK1bPygFMFSRjHkub67XrQXwBVw';
 const FOLDER_ID = '1u901nO4ddhMR78VgprZ3RmEFjw38FydX';
+const SHEET_ID = '1pa0Ek_g0JHm0qPMucugC9oQ2Si7MbiMZVMHWyObvob8';
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
 
 // common tags for filtering
 const COMMON_TAGS = [
@@ -283,6 +284,80 @@ async function fetchFiles(folderId, pageToken = null, isSubfolder = false) {
     return results;
 }
 
+async function fetchSheetData() {
+    try {
+        const response = await fetch(SHEET_CSV_URL);
+        const csvText = await response.text();
+
+        // Simple CSV parser
+        const lines = csvText.split('\n');
+        const results = [];
+
+        // Skip header lines (Row 1: Title, Row 2: Headers)
+        // Based on research, Row 1 is "楽譜一覧", Row 2 is headers
+        for (let i = 2; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            // Handle quotes in CSV if necessary (simple split for now)
+            const parts = line.split(',').map(p => p.replace(/^"|"$/g, '').trim());
+            if (parts.length < 5) continue;
+
+            const [category, no, name, yomi, composer] = parts;
+            results.push({
+                category,
+                no,
+                title: name,
+                titleYomi: yomi,
+                artist: composer,
+                tags: [category],
+                instrument: "", // Will be filled from matching file
+                link: "",
+                isAvailable: false
+            });
+        }
+        return results;
+    } catch (error) {
+        console.error("Error fetching sheet data:", error);
+        return [];
+    }
+}
+
+/**
+ * Merge spreadsheet entries with physical drive files
+ */
+function mergeData(sheetEntries, physicalFiles) {
+    const normalize = (str) => str.toLowerCase().replace(/[\s\.]/g, '');
+
+    return sheetEntries.map(entry => {
+        const entryTitleNorm = normalize(entry.title);
+        const entryArtistNorm = normalize(entry.artist);
+
+        // Find best match in physical files
+        const match = physicalFiles.find(file => {
+            const fileTitleNorm = normalize(file.title);
+            const fileArtistNorm = normalize(file.artist);
+
+            // Match if title is contained or contains (lenient match)
+            const titleMatch = fileTitleNorm.includes(entryTitleNorm) || entryTitleNorm.includes(fileTitleNorm);
+            const artistMatch = fileArtistNorm.includes(entryArtistNorm) || entryArtistNorm.includes(fileArtistNorm) || entry.artist === "不明";
+
+            return titleMatch && artistMatch;
+        });
+
+        if (match) {
+            return {
+                ...entry,
+                instrument: match.instrument,
+                tags: [...new Set([...entry.tags, ...match.tags])],
+                link: match.link,
+                isAvailable: true
+            };
+        }
+        return entry;
+    });
+}
+
 function renderFiles(files) {
     const grid = document.getElementById('results-grid');
     grid.innerHTML = '';
@@ -294,6 +369,16 @@ function renderFiles(files) {
         const tagsHtml = file.tags.map(tag => `<span class="item-tag">${tag}</span>`).join('');
         const instrumentHtml = file.instrument ? `<span class="item-instrument">${file.instrument}</span>` : '';
 
+        // Only show open button if file is available
+        const openButtonField = file.isAvailable ? `
+            <a href="${file.link}" target="_blank" class="btn-open">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                ファイルを開く
+            </a>
+        ` : `
+            <div class="unavailable-msg">楽譜ファイル準備中</div>
+        `;
+
         card.innerHTML = `
             <div class="tag-container">
                 ${tagsHtml}
@@ -304,10 +389,7 @@ function renderFiles(files) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 ${file.artist}
             </div>
-            <a href="${file.link}" target="_blank" class="btn-open">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                ファイルを開く
-            </a>
+            ${openButtonField}
         `;
         grid.appendChild(card);
     });
@@ -333,16 +415,17 @@ async function init() {
     }
 
     if (API_KEY === 'AIzaSyBbHgpvAK1bPygFMFSRjHkub67XrQXwBVw' || !API_KEY.startsWith('AIza')) {
-        allFiles = [
-            { artist: "Official髭男dism", title: "ミックスナッツ", tags: ["J-POP", "Anime"], instrument: "ピアノ", link: "#" },
-            { artist: "Official髭男dism", title: "Subtitle", tags: ["J-POP", "Drama"], instrument: "ピアノ", link: "#" },
-            { artist: "Mrs. GREEN APPLE", title: "ダンスホール", tags: ["J-POP"], instrument: "", link: "#" },
-            { artist: "Ado", title: "新時代", tags: ["J-POP", "Anime"], instrument: "", link: "#" },
-            { artist: "Toby Fox", title: "MEGALOVANIA", tags: ["Game"], instrument: "", link: "#" }
-        ];
+        // ... dummy data ...
     } else {
-        allFiles = await fetchFiles(FOLDER_ID);
-        console.log(`Fetched ${allFiles.length} files from API`);
+        const [sheetEntries, physicalFiles] = await Promise.all([
+            fetchSheetData(),
+            fetchFiles(FOLDER_ID)
+        ]);
+
+        allFiles = mergeData(sheetEntries, physicalFiles);
+
+        console.log(`Merged ${allFiles.length} entries (${physicalFiles.length} physical files)`);
+
         if (allFiles.length > 0) {
             localStorage.setItem(CACHE_KEY, JSON.stringify({
                 timestamp: Date.now(),
@@ -351,8 +434,8 @@ async function init() {
         }
     }
 
-    // Sort by title (alphabetical) initially
-    allFiles.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+    // Sort by name (reading if available, otherwise title)
+    allFiles.sort((a, b) => (a.titleYomi || a.title).localeCompare((b.titleYomi || b.title), 'ja'));
 
     loading.style.display = 'none';
     renderFiles(allFiles);
@@ -427,7 +510,12 @@ async function refreshCache() {
         console.log("Cache cleared manually");
 
         // Refetch
-        allFiles = await fetchFiles(FOLDER_ID);
+        const [sheetEntries, physicalFiles] = await Promise.all([
+            fetchSheetData(),
+            fetchFiles(FOLDER_ID)
+        ]);
+
+        allFiles = mergeData(sheetEntries, physicalFiles);
 
         if (allFiles.length > 0) {
             localStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -437,7 +525,7 @@ async function refreshCache() {
         }
 
         // Sort and Render
-        allFiles.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+        allFiles.sort((a, b) => (a.titleYomi || a.title).localeCompare((b.titleYomi || b.title), 'ja'));
         renderFiles(allFiles);
         console.log(`Refreshed ${allFiles.length} files from API`);
     } catch (error) {
