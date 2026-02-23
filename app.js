@@ -347,6 +347,9 @@ async function init() {
         }
     }
 
+    // Sort by title (alphabetical) initially
+    allFiles.sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+
     loading.style.display = 'none';
     renderFiles(allFiles);
 }
