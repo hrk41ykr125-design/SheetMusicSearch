@@ -328,7 +328,7 @@ async function init() {
         }
     }
 
-    if (API_KEY === 'YOUR_GOOGLE_DRIVE_API_KEY' || !API_KEY.startsWith('AIza')) {
+    if (API_KEY === 'AIzaSyBbHgpvAK1bPygFMFSRjHkub67XrQXwBVw' || !API_KEY.startsWith('AIza')) {
         allFiles = [
             { artist: "Official髭男dism", title: "ミックスナッツ", tags: ["J-POP", "Anime"], instrument: "ピアノ", link: "#" },
             { artist: "Official髭男dism", title: "Subtitle", tags: ["J-POP", "Drama"], instrument: "ピアノ", link: "#" },
