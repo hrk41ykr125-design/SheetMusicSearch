@@ -79,6 +79,16 @@ async function fetchFiles(folderId) {
     const results = [];
     const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webViewLink)&key=${API_KEY}`;
 
+    // Allowed MIME types for "Sheet Music" (Documents)
+    const ALLOWED_MIMES = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.google-apps.document',
+        'application/rtf',
+        'text/plain'
+    ];
+
     try {
         const response = await fetch(url);
         const data = await response.json();
@@ -88,7 +98,7 @@ async function fetchFiles(folderId) {
                 if (file.mimeType === 'application/vnd.google-apps.folder') {
                     const subFiles = await fetchFiles(file.id);
                     results.push(...subFiles);
-                } else {
+                } else if (ALLOWED_MIMES.includes(file.mimeType)) {
                     const parsed = parseFilename(file.name);
                     results.push({
                         ...parsed,
