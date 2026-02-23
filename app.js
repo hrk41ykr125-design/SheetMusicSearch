@@ -90,7 +90,7 @@ function parseFilename(filename) {
 
 async function fetchFiles(folderId, pageToken = null) {
     const results = [];
-    let url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=nextPageToken,files(id,name,mimeType,webViewLink)&key=${API_KEY}`;
+    let url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=nextPageToken,files(id,name,mimeType,webViewLink,shortcutDetails)&pageSize=1000&key=${API_KEY}`;
     if (pageToken) url += `&pageToken=${pageToken}`;
 
     // Allowed MIME types / Extensions for "Sheet Music"
@@ -110,8 +110,19 @@ async function fetchFiles(folderId, pageToken = null) {
 
         if (data.files) {
             for (const file of data.files) {
-                if (file.mimeType === 'application/vnd.google-apps.folder') {
-                    const subFiles = await fetchFiles(file.id);
+                // Handle normal folders and shortcuts to folders
+                let isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+                let targetId = file.id;
+
+                if (file.mimeType === 'application/vnd.google-apps.shortcut' && file.shortcutDetails) {
+                    if (file.shortcutDetails.targetMimeType === 'application/vnd.google-apps.folder') {
+                        isFolder = true;
+                        targetId = file.shortcutDetails.targetId;
+                    }
+                }
+
+                if (isFolder) {
+                    const subFiles = await fetchFiles(targetId);
                     results.push(...subFiles);
                 } else {
                     const isDocMime = ALLOWED_MIMES.includes(file.mimeType);
@@ -172,7 +183,7 @@ function renderFiles(files) {
     });
 }
 
-const CACHE_KEY = 'SHEET_MUSIC_CACHE_V4_PAGINATION_FUZZY';
+const CACHE_KEY = 'SHEET_MUSIC_CACHE_V5_STURDY';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
@@ -184,6 +195,7 @@ async function init() {
         const { timestamp, data } = JSON.parse(cachedData);
         if (Date.now() - timestamp < CACHE_EXPIRY) {
             allFiles = data;
+            console.log(`Loaded ${allFiles.length} files from cache`);
             loading.style.display = 'none';
             renderFiles(allFiles);
             return;
@@ -194,12 +206,13 @@ async function init() {
         allFiles = [
             { artist: "Official髭男dism", title: "ミックスナッツ", tags: ["J-POP", "Anime"], instrument: "pf", link: "#" },
             { artist: "Official髭男dism", title: "Subtitle", tags: ["J-POP", "Drama"], instrument: "pf", link: "#" },
-            { artist: "back number", title: "瞬き", tags: ["J-POP", "Movie"], instrument: "", link: "#" },
+            { artist: "Mrs. GREEN APPLE", title: "ダンスホール", tags: ["J-POP"], instrument: "", link: "#" },
             { artist: "Ado", title: "新時代", tags: ["J-POP", "Anime"], instrument: "", link: "#" },
-            { artist: "不明", title: "Classic Vol.4", tags: ["Classic"], instrument: "", link: "#" }
+            { artist: "Toby Fox", title: "MEGALOVANIA", tags: ["Game"], instrument: "", link: "#" }
         ];
     } else {
         allFiles = await fetchFiles(FOLDER_ID);
+        console.log(`Fetched ${allFiles.length} files from API`);
         if (allFiles.length > 0) {
             localStorage.setItem(CACHE_KEY, JSON.stringify({
                 timestamp: Date.now(),
@@ -213,10 +226,11 @@ async function init() {
 }
 
 function filterFiles() {
-    const nameQuery = document.getElementById('search-name').value.toLowerCase();
-    const authorQuery = document.getElementById('search-author').value.toLowerCase();
-    const tagQuery = document.getElementById('search-tag').value.toLowerCase();
-    const instrumentQuery = document.getElementById('search-instrument').value.toLowerCase();
+    // Trim queries to avoid issues with trailing spaces
+    const nameQuery = document.getElementById('search-name').value.trim().toLowerCase();
+    const authorQuery = document.getElementById('search-author').value.trim().toLowerCase();
+    const tagQuery = document.getElementById('search-tag').value.trim().toLowerCase();
+    const instrumentQuery = document.getElementById('search-instrument').value.trim().toLowerCase();
 
     const filtered = allFiles.filter(file => {
         const titleLower = file.title.toLowerCase();
@@ -229,8 +243,8 @@ function filterFiles() {
 
             // Check aliases
             for (const [target, aliases] of Object.entries(SEARCH_ALIASES)) {
-                if (target.includes(field) || field.includes(target)) {
-                    if (aliases.some(a => a.includes(query) || query.includes(a))) return true;
+                if (target.toLowerCase().includes(field.toLowerCase()) || field.toLowerCase().includes(target.toLowerCase())) {
+                    if (aliases.some(a => a.toLowerCase().includes(query) || query.includes(a.toLowerCase()))) return true;
                 }
             }
             return false;
