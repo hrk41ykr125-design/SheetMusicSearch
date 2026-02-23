@@ -538,7 +538,13 @@ function filterFiles() {
         };
 
         const matchName = isMatch(titleLower, nameQuery);
-        const matchAuthor = isMatch(artistLower, authorQuery, artistNorm);
+        let matchAuthor = isMatch(artistLower, authorQuery, artistNorm);
+
+        // If author search is active, exclude items with unknown/blank artist
+        if (authorQuery && (file.artist === "不明" || !file.artist.trim())) {
+            matchAuthor = false;
+        }
+
         const matchTag = !tagQuery || file.tags.some(t => t.toLowerCase().includes(tagQuery));
         const matchInstrument = !instrumentQuery || (file.instrument && file.instrument.toLowerCase().includes(instrumentQuery));
 
