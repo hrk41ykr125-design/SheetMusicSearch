@@ -115,6 +115,31 @@ select:focus {
     transform: translateY(-1px);
 }
 
+.btn-refresh {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 3rem;
+    width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-refresh:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: var(--primary);
+}
+
+.btn-refresh.spinning svg {
+    animation: spin 1s linear infinite;
+}
+
 .results-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
