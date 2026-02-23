@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheet Music Search | 楽譜ライブラリ</title>
+    <meta name="description" content="Google ドライブ内の楽譜を簡単に検索・分類できるライブラリサイト">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sheet Music Search</h1>
+            <p>Google Drive 楽譜ライブラリ</p>
+        </header>
+
+        <section class="search-section">
+            <div class="form-group">
+                <label for="search-name">名称</label>
+                <input type="text" id="search-name" placeholder="曲名を入力...">
+            </div>
+            <div class="form-group">
+                <label for="search-author">作者</label>
+                <input type="text" id="search-author" placeholder="アーティスト名...">
+            </div>
+            <div class="form-group">
+                <label for="category-select">カテゴリ</label>
+                <select id="category-select">
+                    <option value="">全てのカテゴリ</option>
+                    <option value="Duo">Duo</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Classic">Classic</option>
+                    <option value="Child">Child</option>
+                    <option value="CM">CM</option>
+                    <option value="Mens">Mens</option>
+                    <option value="Movie">Movie</option>
+                    <option value="Anime">Anime</option>
+                    <option value="Ladies">Ladies</option>
+                    <option value="洋インスト">洋インスト</option>
+                    <option value="VP">VP</option>
+                    <option value="無印">無印</option>
+                    <option value="etc.">etc.</option>
+                    <option value="ジャズ・ラテン">ジャズ・ラテン</option>
+                    <option value="童謡">童謡</option>
+                </select>
+            </div>
+            <button class="btn-search" id="btn-search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                検索
+            </button>
+        </section>
+
+        <div id="loading" class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+
+        <main class="results-grid" id="results-grid">
+            <!-- 結果がここに動的に生成されます -->
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
