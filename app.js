@@ -48,10 +48,48 @@ const SONG_ARTIST_MAP = {
     "ベテルギウス": "優里",
     "水平線": "back number",
     "高嶺の花子さん": "back number",
+    "ハッピーエンド": "back number",
     "猫": "DISH//",
     "丸の内サディスティック": "椎名林檎",
     "チェリー": "スピッツ",
-    "小さな恋のうた": "MONGOL800"
+    "小さな恋のうた": "MONGOL800",
+    "わかってないよ": "映秀。",
+    "夢はひそかに": "Disney",
+    "Bling-Bang-Bang-Born": "Creepy Nuts",
+    "パート・オブ・ユア・ワールド": "Disney",
+    "自由への扉": "Disney",
+    "それもいいね": "TRACK15",
+    "リカ": "My Hair is Bad",
+    "Rush E": "Sheet Music Boss",
+    "コウを追いかけて": "阿部海太郎",
+    "青と夏": "Mrs. GREEN APPLE",
+    "千本桜": "WhiteFlame",
+    "群青": "YOASOBI",
+    "ラプソディ・イン・ブルー": "George Gershwin",
+    "アイドル": "YOASOBI",
+    "強風オールバッグ": "ゆこぴ",
+    "木星": "Gustav Holst",
+    "新世界より": "Antonin Dvorak",
+    "WAになっておどろう": "V6",
+    "となりのトトロ": "久石譲",
+    "いぬのおまわりさん": "童謡",
+    "風笛": "大島ミチル",
+    "太陽にほえろ": "大野克夫",
+    "The Song of Life": "鳥山雄司",
+    "Rhythm And Police": "本間勇輔",
+    "大ちゃん数え唄": "天童よしみ",
+    "CAT'S EYE": "杏里",
+    "妖怪人間ベム": "ハニー・ナイツ",
+    "キューティーハニー": "前川陽子",
+    "ゲゲゲの鬼太郎": "熊倉一雄",
+    "CHA-LA HEAD-CHA-LA": "影山ヒロノブ",
+    "A列車で行こう": "Duke Ellington",
+    "美女と野獣": "Disney",
+    "リベルタンゴ": "Astor Piazzolla",
+    "古畑任三郎": "本間勇輔",
+    "ジュラシック・パーク": "John Williams",
+    "残酷な天使のテーゼ": "高橋洋子",
+    "ルパン三世": "大野雄二"
 };
 
 // Instrument Normalization Map
@@ -80,8 +118,10 @@ let allFiles = [];
  * Pattern: 【Artist】Title_Metadata_Instrument.ext
  */
 function parseFilename(filename, mimeType = null) {
-    // Check for image extensions as secondary safety
-    if (/\.(jpe?g|png|gif|bmp|webp|heic)$/i.test(filename)) {
+    // Check for image extensions or junk files
+    if (/\.(jpe?g|png|gif|bmp|webp|heic)$/i.test(filename) ||
+        /新しいテキスト|新しいビットマップ|表紙|ドキュメント\.txt$/i.test(filename) ||
+        /^[0-9a-f]{32}_[0-9]+\.pdf$/i.test(filename)) { // Ignore temp hash files
         return null;
     }
 
