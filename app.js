@@ -192,6 +192,13 @@ function parseFilename(filename, mimeType = null) {
     title = title.replace(/^[0-9]+[\s\-\.]*/, '').trim(); // Remove leading numbers
     title = title.replace(/\[.*?\]/g, '').trim();        // Remove bracketed text
 
+    // Extract tie-up from 「」
+    const tieupMatch = title.match(/「(.*?)」/);
+    if (tieupMatch) {
+        tags.push(tieupMatch[1].trim());
+        title = title.replace(tieupMatch[0], "").trim();
+    }
+
     // specific rule for Official髭男dism
     const higedanKeywords = ["髭男", "ヒゲダン", "Official髭男dism"];
     if (higedanKeywords.some(k => artist.includes(k) || title.includes(k))) {
@@ -344,13 +351,23 @@ async function fetchSheetData() {
             if (parts.length < 5) continue;
 
             const [category, no, name, yomi, composer] = parts;
+            let songTitle = name;
+            const rowTags = [category];
+
+            // Extract tie-up from 「」 in spreadsheet name
+            const tieupMatch = name.match(/「(.*?)」/);
+            if (tieupMatch) {
+                rowTags.push(tieupMatch[1].trim());
+                songTitle = name.replace(tieupMatch[0], "").trim();
+            }
+
             results.push({
                 category,
                 no,
-                title: name,
+                title: songTitle,
                 titleYomi: yomi,
                 artist: composer,
-                tags: [category],
+                tags: rowTags,
                 instrument: "", // Will be filled from matching file
                 link: "",
                 isAvailable: false
