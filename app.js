@@ -1,6 +1,6 @@
 const API_KEY = 'AIzaSyBbHgpvAK1bPygFMFSRjHkub67XrQXwBVw';
 const FOLDER_ID = '1u901nO4ddhMR78VgprZ3RmEFjw38FydX';
-const SHEET_ID = '1pa0Ek_g0JHm0qPMucugC9oQ2Si7MbiMZVMHWyObvob8';
+const SHEET_ID = '1NNV2TGR2bBqBFYFraGeIiG5Lnk7nOSmc0x1J3V1jUMA';
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
 
 // Hashed passcode (SHA-256 of "rainbow")
@@ -340,33 +340,40 @@ async function fetchSheetData() {
         const lines = csvText.split('\n');
         const results = [];
 
-        // Skip header lines (Row 1: Title, Row 2: Headers)
-        // Based on research, Row 1 is "楽譜一覧", Row 2 is headers
-        for (let i = 2; i < lines.length; i++) {
+        // 新しいスプレッドシート形式: 日時, タイトル, アーティスト名, 分類, 作曲者, 楽曲情報
+        // 1行目はヘッダーなので i = 1 からスタート
+        for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
 
-            // Handle quotes in CSV if necessary (simple split for now)
             const parts = line.split(',').map(p => p.replace(/^"|"$/g, '').trim());
-            if (parts.length < 5) continue;
+            // 少なくともタイトル(1)があれば処理
+            if (parts.length < 2) continue;
 
-            const [category, no, name, yomi, composer] = parts;
-            let songTitle = name;
+            const date = parts[0];
+            const title = parts[1];
+            const artist = parts[2] || "不明";
+            const category = parts[3] || "その他";
+            const composer = parts[4] || "不明";
+            const desc = parts[5] || "";
+
+            let songTitle = title;
             const rowTags = [category];
 
             // Extract tie-up from 「」 in spreadsheet name
-            const tieupMatch = name.match(/「(.*?)」/);
+            const tieupMatch = title.match(/「(.*?)」/);
             if (tieupMatch) {
                 rowTags.push(tieupMatch[1].trim());
-                songTitle = name.replace(tieupMatch[0], "").trim();
+                songTitle = title.replace(tieupMatch[0], "").trim();
             }
 
             results.push({
-                category,
-                no,
+                category: category,
+                no: "", // no longer used
                 title: songTitle,
-                titleYomi: yomi,
-                artist: composer,
+                titleYomi: songTitle, // simplified
+                artist: artist,
+                composer: composer,
                 tags: rowTags,
                 instrument: "", // Will be filled from matching file
                 link: "",
