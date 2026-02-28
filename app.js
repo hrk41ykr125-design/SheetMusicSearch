@@ -165,7 +165,72 @@ const SEARCH_ALIASES = {
     "the carpenters": ["カーペンターズ"],
     "abba": ["アバ"],
     "the eagles": ["イーグルス"],
-    "backstreet boys": ["バックストリートボーイズ", "バックス"]
+    "backstreet boys": ["バックストリートボーイズ", "バックス"],
+    "linkin park": ["リンキンパーク", "リンキン"],
+    "oasis": ["オアシス"],
+    "coldplay": ["コールドプレイ"],
+    "radiohead": ["レディオヘッド"],
+    "red hot chili peppers": ["レッドホットチリペッパーズ", "レッチリ"],
+    "green day": ["グリーンデイ"],
+    "avril lavigne": ["アヴリルラヴィーン", "アヴリル"],
+    "nirvana": ["ニルヴァーナ"],
+    "bon jovi": ["ボンジョヴィ"],
+    "guns n' roses": ["ガンズアンドローゼズ", "ガンズ"],
+    "aerosmith": ["エアロスミス"],
+    "van halen": ["ヴァンヘイレン"],
+    "led zeppelin": ["レッドツェッペリン"],
+    "deep purple": ["ディープパープル"],
+    "the rolling stones": ["ローリングストーンズ", "ストーンズ"],
+    "david bowie": ["デヴィッドボウイ"],
+    "eric clapton": ["エリッククラプトン"],
+    "stevie ray vaughan": ["スティーヴィーレイヴォーン"],
+    "john mayer": ["ジョンメイヤー"],
+    "bruno mars": ["ブルーノマーズ"],
+    "lady gaga": ["レディーガガ"],
+    "katy perry": ["ケイティペリー"],
+    "rihanna": ["リアーナ"],
+    "beyonce": ["ビヨンセ"],
+    "justin timberlake": ["ジャスティンティンバーレイク"],
+    "pharrell williams": ["ファレルウィリアムス"],
+    "daft punk": ["ダフトパンク"],
+    "chvrches": ["チャーチズ"],
+    "the 1975": ["ナインティーンセブンティファイブ"],
+    "pale waves": ["ペールウェーブス"],
+    "dirty hits": ["ダーティーヒッツ"],
+    "beabadoobee": ["ビーバドゥービー"],
+    "clairo": ["クレイロ"],
+    "billie eilish": ["ビリーアイリッシュ"],
+    "olivia rodrigo": ["オリヴィアロドリゴ"],
+    "dua lipa": ["デュアリパ"],
+    "doja cat": ["ドジャキャット"],
+    "sza": ["シザ"],
+    "the weeknd": ["ウィークエンド"],
+    "post malone": ["ポストマローン"],
+    "travis scott": ["トラヴィススコット"],
+    "kanye west": ["カニエウェスト"],
+    "kendrick lamar": ["ケンドリックラマー"],
+    "drake": ["ドレイク"],
+    "eminem": ["エミネム"],
+    "jay-z": ["ジェイジー"],
+    "snoop dogg": ["スヌープドッグ"],
+    "dr. dre": ["ドクタードレー"],
+    "2pac": ["トゥーパック"],
+    "notorious b.i.g.": ["ビギー"],
+    "bob marley": ["ボブマーリー"],
+    "jason mraz": ["ジェイソンムラーズ"],
+    "jack johnson": ["ジャックジョンソン"],
+    "donavon frankenreiter": ["ドナヴォンフランケンレイター"],
+    "g. love": ["ジーラヴ"],
+    "new order": ["ニューオーダー"],
+    "the smiths": ["スミス"],
+    "the cure": ["キュアー"],
+    "joy division": ["ジョイディヴィジョン"],
+    "kraftwerk": ["クラフトワーク"],
+    "yellow magic orchestra": ["イエローマジックオーケストラ", "ymo"],
+    "ryuichi sakamoto": ["坂本龍一"],
+    "joe hisaishi": ["久石譲"],
+    "nobuo uematsu": ["植松伸夫"],
+    "koji kondo": ["近藤浩治"],
 };
 
 // Automated artist mapping for "Unknown" songs
@@ -479,7 +544,14 @@ async function fetchSheetData() {
  * and deduplicate entirely identical logical songs.
  */
 function mergeData(sheetEntries, physicalFiles) {
-    const normalize = (str) => str.toLowerCase().replace(/[\s\.]/g, '');
+    // 括弧や記号などのノイズを除去して正規化
+    const normalize = (str) => {
+        if (!str) return "";
+        return str.toLowerCase()
+            .replace(/[\s\.\,\!\?\"\'\(\)\[\]【】「」＿\-\_\&\+]/g, '') // 記号や空白を除去
+            .replace(/[ぁ-ん]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0x60)); // 平仮名を片仮名に変換して比較
+    };
+
     const matchedLinks = new Set();
     const finalList = [];
     const seenSongs = new Set(); // To prevent duplicates (title + artist)
@@ -579,7 +651,7 @@ function renderFiles(files) {
     });
 }
 
-const CACHE_KEY = 'SHEET_MUSIC_CACHE_V6_NORMALIZATION';
+const CACHE_KEY = 'SHEET_MUSIC_CACHE_V7_DEDUPE_ALIASES';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
@@ -628,16 +700,20 @@ async function init() {
     loading.style.display = 'none';
     renderFiles(allFiles);
 }
-
 function filterFiles() {
-    // Trim queries to avoid issues with trailing spaces
+    // 検索クエリの取得
     const nameQuery = document.getElementById('search-name').value.trim().toLowerCase();
     const authorQuery = document.getElementById('search-author').value.trim().toLowerCase();
     const tagQuery = document.getElementById('search-tag').value.trim().toLowerCase();
     const instrumentQuery = document.getElementById('search-instrument').value.trim().toLowerCase();
 
-    // Helper to normalize strings for comparison (remove spaces and dots)
-    const normalize = (str) => str.toLowerCase().replace(/[\s\.]/g, '');
+    // 括弧や記号などのノイズを除去して正規化
+    const normalize = (str) => {
+        if (!str) return "";
+        return str.toLowerCase()
+            .replace(/[\s\.\,\!\?\"\'\(\)\[\]【】「」＿\-\_\&\+]/g, '')
+            .replace(/[ぁ-ん]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0x60)); // 平仮名を片仮名に変換
+    };
 
     const filtered = allFiles.filter(file => {
         const titleLower = file.title.toLowerCase();
@@ -656,7 +732,7 @@ function filterFiles() {
             // Check aliases
             for (const [target, aliases] of Object.entries(SEARCH_ALIASES)) {
                 const targetNorm = normalize(target);
-                // If the field matches the target (e.g. "Mrs.GREEN APPLE" vs "mrs. green apple")
+                // If the field matches the target
                 if (fieldNorm === targetNorm || field.includes(target.toLowerCase()) || target.toLowerCase().includes(field)) {
                     if (aliases.some(a => normalize(a).includes(queryNorm) || queryNorm.includes(normalize(a)))) return true;
                 }
@@ -680,12 +756,6 @@ function filterFiles() {
 
     renderFiles(filtered);
 }
-
-const inputs = ['search-name', 'search-author', 'search-tag', 'search-instrument'];
-inputs.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', filterFiles);
-});
 
 /**
  * Force clear cache and refetch from API
@@ -732,6 +802,12 @@ async function refreshCache() {
 }
 
 // Event Listeners
+const inputs = ['search-name', 'search-author', 'search-tag', 'search-instrument'];
+inputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', filterFiles);
+});
+
 document.getElementById('btn-search').addEventListener('click', filterFiles);
 document.getElementById('btn-refresh').addEventListener('click', refreshCache);
 document.getElementById('btn-login').addEventListener('click', handleLogin);
