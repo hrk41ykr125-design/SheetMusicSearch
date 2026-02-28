@@ -61,8 +61,9 @@ const TAG_KEYWORDS = {
 
 // Aliases for fuzzy search (Title and Artist)
 const SEARCH_ALIASES = {
-    "mrs. green apple": ["ミセス", "ミセスグリーンアップル", "Mrs.GREEN APPLE"],
-    "official髭男dism": ["ヒゲダン", "髭男"],
+    "suchmos": ["サチモス"],
+    "mrs. green apple": ["ミセス", "ミセスグリーンアップル", "Mrs.GREEN APPLE", "mrs green apple"],
+    "official髭男dism": ["ヒゲダン", "髭男", "official higedandism"],
     "megalovannia": ["メガロバニア"],
     "megalovania": ["メガロバニア"],
     "undertale": ["アンダーテール", "アンテ"],
@@ -72,13 +73,99 @@ const SEARCH_ALIASES = {
     "ado": ["アド"],
     "back number": ["バックナンバー"],
     "radwimps": ["ラッド", "ラッドウィンプス"],
-    "t-square": ["ティー・スクエア", "ティースクエア"],
+    "t-square": ["ティー・スクエア", "ティースクエア", "tsquare", "t square"],
     "supercell": ["スーパーセル"],
-    "back street boys": ["バックスストリートボーイズ"],
+    "back street boys": ["バックストリートボーイズ", "バックス"],
     "queen": ["クイーン"],
     "the beatles": ["ビートルズ"],
     "disney": ["ディズニー"],
-    "night dancer": ["ナイトダンサー"]
+    "night dancer": ["ナイトダンサー"],
+    "king gnu": ["キングヌー", "ヌー"],
+    "one ok rock": ["ワンオクロック", "ワンオク"],
+    "bump of chicken": ["バンプオブチキン", "バンプ"],
+    "mr.children": ["ミスチル", "ミスターチルドレン"],
+    "uverworld": ["ウーバーワールド", "ウーバー"],
+    "l'arc~en~ciel": ["ラルクアンシエル", "ラルク"],
+    "porno graffitti": ["ポルノグラフィティ", "ポルノ"],
+    "asian kung-fu generation": ["アジアンカンフージェネレーション", "アジカン"],
+    "super beaver": ["スーパービーバー", "ビーバー"],
+    "my hair is bad": ["マイヘアーイズバッド", "マイヘア"],
+    "macaroni empitsu": ["マカロニえんぴつ", "マカえん"],
+    "saucy dog": ["サウシードッグ", "サウシー"],
+    "novelbright": ["ノーベルブライト", "ノーブラ"],
+    "green apple": ["グリーンアップル"],
+    "greeeen": ["グリーン"],
+    "sekai no owari": ["セカイノオワリ", "セカオワ"],
+    "alexandros": ["アレキサンドロス", "ドロス"],
+    "man with a mission": ["マンウィズアミッション", "マンウィズ"],
+    "aimyon": ["あいみょん"],
+    "kenshi yonezu": ["米津玄師", "よねづけんし"],
+    "gen hoshino": ["星野源", "ほしのげん"],
+    "fujii kaze": ["藤井風", "ふじいかぜ"],
+    "yuuri": ["優里", "ゆうり"],
+    "imase": ["イマセ"],
+    "maco": ["マコ"],
+    "uru": ["ウル"],
+    "milet": ["ミレイ"],
+    "aimer": ["エメ"],
+    "lisa": ["リサ"],
+    "uruhae rushia": ["潤羽るしあ"],
+    "hoshimachi suisei": ["星街すいせい"],
+    "hololive": ["ホロライブ"],
+    "gumi": ["グミ"],
+    "hatsune miku": ["初音ミク"],
+    "kikuo": ["きくお"],
+    "n-buna": ["ナブナ"],
+    "orangestar": ["オレンジスター"],
+    "deco*27": ["デコニーナ"],
+    "b'z": ["ビーズ"],
+    "smamp": ["スマップ"],
+    "arashi": ["嵐", "あらし"],
+    "king & prince": ["キンプリ", "キングアンドプリンス"],
+    "snow man": ["スノーマン"],
+    "sixstones": ["ストーンズ"],
+    "naniwa danshi": ["なにわ男子"],
+    "yoasobi": ["ヨアソビ"],
+    "yama": ["ヤマ"],
+    "eill": ["エイル"],
+    "zard": ["ザード"],
+    "spitz": ["スピッツ"],
+    "southern all stars": ["サザンオールスターズ", "サザン"],
+    "dreams come true": ["ドリームズカムトゥルー", "ドリカム"],
+    "utada hikaru": ["宇多田ヒカル"],
+    "misia": ["ミーシャ"],
+    "ayu": ["浜崎あゆみ", "あゆ"],
+    "namie amuro": ["安室奈美恵", "アムロ"],
+    "perfume": ["パフューム"],
+    "babymetal": ["ベビーメタル", "ベビメタ"],
+    "twice": ["トゥワイス"],
+    "nizi u": ["ニジュー", "niziu"],
+    "bts": ["防弾少年団", "バンタン"],
+    "blackpink": ["ブラックピンク", "ブルピン"],
+    "seventeen": ["セブンティーン", "セブチ"],
+    "stray kids": ["ストレイキッズ", "スキズ"],
+    "tomorrow x together": ["トゥモローバイトゥギャザー", "txt"],
+    "enhypen": ["エンハイプン", "エナプ"],
+    "aespa": ["エスパ"],
+    "ive": ["アイブ"],
+    "le sserafim": ["ルセラフィム", "ルセラ"],
+    "newjeans": ["ニュージーンズ"],
+    "maroon 5": ["マルーン5"],
+    "bruno mars": ["ブルーノマーズ"],
+    "ed sheeran": ["エドシーラン"],
+    "taylor swift": ["テイラースウィフト"],
+    "justin bieber": ["ジャスティンビーバー"],
+    "ariana grande": ["アリアナグランデ", "アリアナ"],
+    "michael jackson": ["マイケルジャクソン", "マイケル"],
+    "elton john": ["エルトンジョン"],
+    "billy joel": ["ビリージョエル"],
+    "steepie wonder": ["スティーヴィーワンダー"],
+    "earth wind & fire": ["アースウィンドアンドファイアー", "アース"],
+    "carpenter": ["カーペンターズ"],
+    "the carpenters": ["カーペンターズ"],
+    "abba": ["アバ"],
+    "the eagles": ["イーグルス"],
+    "backstreet boys": ["バックストリートボーイズ", "バックス"]
 };
 
 // Automated artist mapping for "Unknown" songs
@@ -389,43 +476,70 @@ async function fetchSheetData() {
 
 /**
  * Merge spreadsheet entries with physical drive files
+ * and deduplicate entirely identical logical songs.
  */
 function mergeData(sheetEntries, physicalFiles) {
     const normalize = (str) => str.toLowerCase().replace(/[\s\.]/g, '');
     const matchedLinks = new Set();
+    const finalList = [];
+    const seenSongs = new Set(); // To prevent duplicates (title + artist)
 
-    const merged = sheetEntries.map(entry => {
+    // Helper 1: Form a unique key for deduplication
+    const getSongKey = (title, artist) => `${normalize(title)}|${normalize(artist)}`;
+
+    // Process SpreadSheet Entries First
+    for (const entry of sheetEntries) {
         const entryTitleNorm = normalize(entry.title);
         const entryArtistNorm = normalize(entry.artist);
 
         // Find best match in physical files
         const match = physicalFiles.find(file => {
+            if (matchedLinks.has(file.link)) return false; // Don't reuse matched
             const fileTitleNorm = normalize(file.title);
             const fileArtistNorm = normalize(file.artist);
 
-            // Match if title is contained or contains (lenient match)
+            // Match if title is contained or contains
             const titleMatch = fileTitleNorm.includes(entryTitleNorm) || entryTitleNorm.includes(fileTitleNorm);
-            const artistMatch = fileArtistNorm.includes(entryArtistNorm) || entryArtistNorm.includes(fileArtistNorm) || entry.artist === "不明";
+            const artistMatch = fileArtistNorm.includes(entryArtistNorm) || entryArtistNorm.includes(fileArtistNorm) || entry.artist === "不明" || file.artist === "不明";
 
             return titleMatch && artistMatch;
         });
 
+        let songToAdd = null;
         if (match) {
             matchedLinks.add(match.link);
-            return {
+            songToAdd = {
                 ...entry,
+                artist: entry.artist !== "不明" ? entry.artist : match.artist,
+                title: entry.title.length > match.title.length ? entry.title : match.title, // prefer longer, more descriptive title
                 instrument: match.instrument,
                 tags: [...new Set([...entry.tags, ...match.tags])],
                 link: match.link,
                 isAvailable: true
             };
+        } else {
+            songToAdd = { ...entry };
         }
-        return entry;
-    });
 
-    // Add unmatched physical files
+        // Deduplication Check
+        const uniqueKey = getSongKey(songToAdd.title, songToAdd.artist);
+        if (!seenSongs.has(uniqueKey)) {
+            seenSongs.add(uniqueKey);
+            finalList.push(songToAdd);
+        }
+    }
+
+    // Add unmatched physical files (that weren't in the spreadsheet at all)
     const unmatched = physicalFiles.filter(file => !matchedLinks.has(file.link));
-    return [...merged, ...unmatched.map(f => ({ ...f, isAvailable: true }))];
+    for (const file of unmatched) {
+        const uniqueKey = getSongKey(file.title, file.artist);
+        if (!seenSongs.has(uniqueKey)) {
+            seenSongs.add(uniqueKey);
+            finalList.push({ ...file, isAvailable: true });
+        }
+    }
+
+    return finalList;
 }
 
 function renderFiles(files) {
