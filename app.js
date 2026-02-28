@@ -485,20 +485,38 @@ async function fetchFiles(folderId, pageToken = null, isSubfolder = false) {
 
 async function fetchSheetData() {
     try {
-        const response = await fetch(SHEET_CSV_URL);
+        const SHEET_CSV_URL_BUSTED = `${SHEET_CSV_URL}&t=${Date.now()}`;
+        const response = await fetch(SHEET_CSV_URL_BUSTED);
         const csvText = await response.text();
+        console.log(`[SheetData] Raw CSV length: ${csvText.length} bytes`);
 
-        // Simple CSV parser
-        const lines = csvText.split('\n');
+        const lines = csvText.split(/\r?\n/);
         const results = [];
 
-        // 新しいスプレッドシート形式: 日時, タイトル, アーティスト名, 分類, 作曲者, 楽曲情報
-        // 1行目はヘッダーなので i = 1 からスタート
+        function parseCsvLine(text) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result.map(p => p.replace(/^"|"$/g, '').trim());
+        }
+
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
 
-            const parts = line.split(',').map(p => p.replace(/^"|"$/g, '').trim());
+            const parts = parseCsvLine(line);
             // 少なくともタイトル(1)があれば処理
             if (parts.length < 2) continue;
 
@@ -507,7 +525,12 @@ async function fetchSheetData() {
             const artist = parts[2] || "不明";
             const category = parts[3] || "その他";
             const composer = parts[4] || "不明";
-            const desc = parts[5] || "";
+            // Important: description might contain commas but NOT be double quoted in the CSV.
+            // If parts.length > 6, join the rest into desc.
+            let desc = "";
+            if (parts.length > 5) {
+                desc = parts.slice(5).join(',').trim();
+            }
 
             let songTitle = title;
             const rowTags = [category];
@@ -526,12 +549,15 @@ async function fetchSheetData() {
                 titleYomi: songTitle, // simplified
                 artist: artist,
                 composer: composer,
+                desc: desc,
                 tags: rowTags,
                 instrument: "", // Will be filled from matching file
                 link: "",
                 isAvailable: false
             });
         }
+        const entriesWithDesc = results.filter(r => r.desc && r.desc.trim().length > 0);
+        console.log(`[SheetData] Loaded ${results.length} total. Found ${entriesWithDesc.length} with description. First desc:`, entriesWithDesc.length > 0 ? entriesWithDesc[0].desc.substring(0, 50) + "..." : "NONE");
         return results;
     } catch (error) {
         console.error("Error fetching sheet data:", error);
@@ -587,7 +613,10 @@ function mergeData(sheetEntries, physicalFiles) {
                 instrument: match.instrument,
                 tags: [...new Set([...entry.tags, ...match.tags])],
                 link: match.link,
-                isAvailable: true
+                isAvailable: true,
+                // Ensure spreadsheet-only fields are preserved
+                composer: entry.composer || match.composer || "不明",
+                desc: entry.desc || match.desc || ""
             };
         } else {
             songToAdd = { ...entry };
@@ -645,13 +674,18 @@ function renderFiles(files) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 ${file.artist}
             </div>
+            ${file.composer && file.composer !== "不明" ? `
+            <div class="item-composer">
+                作曲: ${file.composer}
+            </div>` : ''}
+            ${file.desc ? `<div class="item-desc">${file.desc}</div>` : ''}
             ${openButtonField}
         `;
         grid.appendChild(card);
     });
 }
 
-const CACHE_KEY = 'SHEET_MUSIC_CACHE_V7_DEDUPE_ALIASES';
+const CACHE_KEY = 'SHEET_MUSIC_CACHE_V9_CS_PARSE_FIX';
 const CACHE_EXPIRY = 60 * 60 * 1000;
 
 async function init() {
@@ -740,11 +774,11 @@ function filterFiles() {
             return false;
         };
 
-        const matchName = isMatch(titleLower, nameQuery);
-        let matchAuthor = isMatch(artistLower, authorQuery, artistNorm);
+        const matchName = isMatch(titleLower, nameQuery) || (file.desc && isMatch(file.desc.toLowerCase(), nameQuery));
+        let matchAuthor = isMatch(artistLower, authorQuery, artistNorm) || (file.composer && isMatch(file.composer.toLowerCase(), authorQuery));
 
         // If author search is active, exclude items with unknown/blank artist
-        if (authorQuery && (file.artist === "不明" || !file.artist.trim())) {
+        if (authorQuery && (file.artist === "不明" || !file.artist.trim()) && (!file.composer || file.composer === "不明")) {
             matchAuthor = false;
         }
 
@@ -763,10 +797,12 @@ function filterFiles() {
 async function refreshCache() {
     const btnRefresh = document.getElementById('btn-refresh');
     const loading = document.getElementById('loading');
+    const grid = document.getElementById('results-grid');
 
     // Visual feedback
     btnRefresh.classList.add('spinning');
     loading.style.display = 'flex';
+    grid.innerHTML = ''; // Clear existing results immediately
 
     try {
         // Clear storage
